@@ -1,8 +1,6 @@
 #include <SPI.h>
 #include <MFRC522.h>
 
-#include "Config.h"
-
 #define SS_PIN D8
 #define RST_PIN D0
 
@@ -37,8 +35,6 @@ void printDec(byte *buffer, byte bufferSize)
     }
 }
 
-int state = 0;
-
 void setup()
 {
     Serial.begin(115200);
@@ -56,36 +52,10 @@ void setup()
     Serial.println(F("This code scan the MIFARE Classic NUID."));
     Serial.print(F("Using the following key:"));
     printHex(key.keyByte, MFRC522::MF_KEY_SIZE);
-
-    pinMode(YELLOW_LED, OUTPUT);
-    pinMode(GREEN_LED, OUTPUT);
-    pinMode(RED_LED, OUTPUT);
-
-    digitalWrite(YELLOW_LED, LOW);
-    digitalWrite(GREEN_LED, LOW);
-    digitalWrite(RED_LED, LOW);
 }
 
 void loop()
 {
-
-    digitalWrite(YELLOW_LED, LOW);
-    digitalWrite(GREEN_LED, LOW);
-    digitalWrite(RED_LED, LOW);
-
-    if (millis() % 1000 < 750)
-        state = 0;
-    if (millis() % 1000 < 500)
-        state = 1;
-    if (millis() % 1000 < 250)
-        state = 2;
-
-    if (state == 0)
-        digitalWrite(YELLOW_LED, HIGH);
-    else if (state == 1)
-        digitalWrite(GREEN_LED, HIGH);
-    else if (state == 2)
-        digitalWrite(RED_LED, HIGH);
 
     // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
     if (!rfid.PICC_IsNewCardPresent())

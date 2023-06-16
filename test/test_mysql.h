@@ -9,7 +9,6 @@
 IPAddress serverIP(SERVER_IP); // Replace with your computer's IP address
 char login_db[] = LOGIN_DB;
 char password_db[] = PASSWORD_DB;
-char name_db[] = NAME_DB;
 WiFiClient client;
 
 void setup()
@@ -30,7 +29,7 @@ void setup()
     // Connect to MySQL server
     MySQL_Connection conn((Client *)&client);
 
-    if (conn.connect(serverIP, PORT_DB, login_db, password_db, name_db))
+    if (conn.connect(serverIP, PORT_DB, login_db, password_db))
     {
         Serial.println("Connected to MySQL server");
     }
