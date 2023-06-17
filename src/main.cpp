@@ -81,6 +81,7 @@ void setupLock()
             else
             {
                 Serial.println("Something wrong while adding");
+                ESP.restart();
             }
 
             delete cur_mem;
@@ -88,27 +89,37 @@ void setupLock()
         else
         {
             Serial.println("Cannot add this lock to database");
+            ESP.restart();
         }
     }
     else
     {
         if (WiFi.status() == WL_CONNECTED && conn.connected())
         {
-            Serial.println("Verifying lock");
+            Serial.print("Verifying lock with id: ");
+            Serial.println(id);
             cur_mem = new MySQL_Cursor(&conn);
             String query = "SELECT id FROM security.lock WHERE id=" + String(id) + ";";
             cur_mem->execute(query.c_str(), true);
-            cur_mem->get_columns();
-            row_values *row = cur_mem->get_next_row();
 
-            if (row != NULL)
+            if (cur_mem->get_columns() != NULL)
             {
-                Serial.println("Lock ok");
+                row_values *row = cur_mem->get_next_row();
+
+                if (row != NULL)
+                {
+                    Serial.println("Lock ok");
+                }
+                else
+                {
+                    Serial.println("Lock not found. Restarting lock");
+                    LockMem::clearMem();
+                    ESP.restart();
+                }
             }
             else
             {
-                Serial.println("Lock not found. Restarting lock");
-                LockMem::clearMem();
+                Serial.println("Cannot verify lock");
                 ESP.restart();
             }
 
@@ -117,6 +128,7 @@ void setupLock()
         else
         {
             Serial.println("Cannot verify lock");
+            ESP.restart();
         }
     }
 }
