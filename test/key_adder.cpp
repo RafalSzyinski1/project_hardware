@@ -12,12 +12,7 @@
 void setupPins()
 {
     pinMode(YELLOW_LED, OUTPUT);
-    pinMode(GREEN_LED, OUTPUT);
-    pinMode(RED_LED, OUTPUT);
-
     digitalWrite(YELLOW_LED, LOW);
-    digitalWrite(GREEN_LED, LOW);
-    digitalWrite(RED_LED, LOW);
 }
 
 void setupWifi()
@@ -70,24 +65,8 @@ void setupLock()
             cur_mem = new MySQL_Cursor(&conn);
             String query = "INSERT INTO security.lock (name) VALUES ('" + name + "');";
             cur_mem->execute(query.c_str(), true);
-            query = "SELECT id FROM security.lock WHERE name LIKE '" + name + "%';";
-            cur_mem->execute(query.c_str(), true);
-            cur_mem->get_columns();
-            row_values *row = cur_mem->get_next_row();
-
-            if (row != NULL)
-            {
-                while (row != NULL)
-                    row = cur_mem->get_next_row();
-                LockMem::writeId(atoi(row->values[0]));
-                Serial.println("Succesful add lock to database");
-            }
-            else
-            {
-                Serial.println("Something wrong while adding");
-                ESP.restart();
-            }
-
+            LockMem::writeId(cur_mem->get_last_insert_id());
+            Serial.println("Succesful add lock to database");
             delete cur_mem;
         }
         else
@@ -174,6 +153,8 @@ void loop()
     }
     else
     {
+        WiFi.reconnect();
+        setupMySQL();
         digitalWrite(YELLOW_LED, LOW);
     }
 
@@ -200,7 +181,7 @@ void loop()
 
     String uid;
     for (int i = 0; i < rfid.uid.size; ++i)
-        uid = uid + String(rfid.uid.uidByte[i]);
+        uid = uid + String(rfid.uid.uidByte[i], HEX);
     Serial.print("UID: ");
     Serial.println(uid);
 
@@ -221,6 +202,7 @@ void loop()
                 Serial.println(row->values[0]);
                 while (row != NULL)
                     row = cur_mem->get_next_row();
+                Serial.println("Enter card");
             }
             else
             {
@@ -231,29 +213,18 @@ void loop()
                 String name = Serial.readStringUntil('\n');
                 query = "INSERT INTO security.key (name, uid) VALUES ('" + name + "', '" + uid + "');";
                 cur_mem->execute(query.c_str(), true);
-                query = "SELECT id FROM security.key WHERE uid='" + uid + "';";
-                cur_mem->execute(query.c_str(), true);
-                if (cur_mem->get_columns() != NULL)
+                if (cur_mem->get_last_insert_id() > 0)
                 {
-                    row_values *row = cur_mem->get_next_row();
-
-                    if (row != NULL)
-                    {
-                        Serial.println("Key added successfuly");
-                        while (row != NULL)
-                            row = cur_mem->get_next_row();
-                    }
-                    else
-                    {
-                        Serial.println("Something wrong while adding key to database. Try again");
-                    }
+                    Serial.println("Key added successfuly");
+                    Serial.println("Enter card");
+                }
+                else
+                {
+                    Serial.println("Something worng. Try again");
                 }
             }
         }
-        else
-        {
-            Serial.println("Cannot verify key. Try again");
-        }
+
         delete cur_mem;
     }
     else
