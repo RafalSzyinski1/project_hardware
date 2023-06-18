@@ -20,6 +20,7 @@ namespace LockMem
     void writeId(int Id);
     void pushKey(byte uid[4]);
     boolean findKey(byte uid[4]);
+    void deleteKeys();
     void pushMessage(int key_id);
     int popMessage();
 };
@@ -111,6 +112,26 @@ boolean LockMem::findKey(byte uid[4])
     }
     EEPROM.end();
     return false;
+}
+
+void LockMem::deleteKeys()
+{
+    EEPROM.begin(EEPROM_SIZE);
+    int adress = KEY_START_ADRESS;
+    while (adress < KEY_END_ADRESS && !(*(EEPROM.getConstDataPtr() + adress) == 0 &&
+                                        *(EEPROM.getConstDataPtr() + adress + 1) == 0 &&
+                                        *(EEPROM.getConstDataPtr() + adress + 2) == 0 &&
+                                        *(EEPROM.getConstDataPtr() + adress + 3) == 0))
+    {
+
+        EEPROM.put(adress, byte(0));
+        EEPROM.put(adress + 1, byte(0));
+        EEPROM.put(adress + 2, byte(0));
+        EEPROM.put(adress + 3, byte(0));
+        adress += 4;
+    }
+    EEPROM.commit();
+    EEPROM.end();
 }
 
 void LockMem::pushMessage(int key_id)

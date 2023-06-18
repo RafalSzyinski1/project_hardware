@@ -153,7 +153,7 @@ void loop()
     }
     else
     {
-        WiFi.reconnect();
+        setupWifi();
         setupMySQL();
         digitalWrite(YELLOW_LED, LOW);
     }
