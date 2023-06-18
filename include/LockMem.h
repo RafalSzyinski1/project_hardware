@@ -21,8 +21,8 @@ namespace LockMem
     void pushKey(byte uid[4]);
     boolean findKey(byte uid[4]);
     void deleteKeys();
-    void pushMessage(int key_id);
-    int popMessage();
+    void pushMessage(byte uid[4]);
+    void popMessage(byte uid[4]);
 };
 
 void LockMem::clearMem()
@@ -134,7 +134,7 @@ void LockMem::deleteKeys()
     EEPROM.end();
 }
 
-void LockMem::pushMessage(int key_id)
+void LockMem::pushMessage(byte uid[4])
 {
     EEPROM.begin(EEPROM_SIZE);
     int adress = MESSAGE_START_ADRESS;
@@ -145,7 +145,10 @@ void LockMem::pushMessage(int key_id)
             *(EEPROM.getConstDataPtr() + adress + 2) == 0 &&
             *(EEPROM.getConstDataPtr() + adress + 3) == 0)
         {
-            EEPROM.put(adress, key_id);
+            EEPROM.put(adress, uid[0]);
+            EEPROM.put(adress + 1, uid[1]);
+            EEPROM.put(adress + 2, uid[2]);
+            EEPROM.put(adress + 3, uid[3]);
             break;
         }
 
@@ -155,7 +158,7 @@ void LockMem::pushMessage(int key_id)
     EEPROM.end();
 }
 
-int LockMem::popMessage()
+void LockMem::popMessage(byte uid[4])
 {
     EEPROM.begin(EEPROM_SIZE);
     int adress = MESSAGE_START_ADRESS;
@@ -169,19 +172,22 @@ int LockMem::popMessage()
             if (adress != MESSAGE_START_ADRESS)
             {
                 adress -= 4;
-                int result;
-                EEPROM.get(adress, result);
-                EEPROM.put(adress, 0);
-                EEPROM.commit();
+                EEPROM.get(adress, uid[0]);
+                EEPROM.get(adress + 1, uid[1]);
+                EEPROM.get(adress + 2, uid[2]);
+                EEPROM.get(adress + 3, uid[3]);
+                EEPROM.put(adress, byte(0));
+                EEPROM.put(adress + 1, byte(0));
+                EEPROM.put(adress + 2, byte(0));
+                EEPROM.put(adress + 3, byte(0));
                 EEPROM.end();
-                return result;
             }
             break;
         }
         adress += 4;
     }
+    EEPROM.commit();
     EEPROM.end();
-    return -1;
 }
 
 #endif // _LOCK_MEM_H_

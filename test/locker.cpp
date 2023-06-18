@@ -189,16 +189,20 @@ void flushMessage()
     int id = LockMem::readId();
     if (WiFi.status() == WL_CONNECTED && conn.connected())
     {
-        int key_id = LockMem::popMessage();
+        byte uid[4] = {0, 0, 0, 0};
+        LockMem::popMessage(uid);
         cur_mem = new MySQL_Cursor(&conn);
-        while (key_id != -1)
+        while (uid[0] != 0 || uid[1] != 0 || uid[2] != 0 || uid[3] != 0)
         {
-            String query = "INSERT INTO security.key_usage_history (key_id, lock_id) VALUES (" + String(key_id) + "," + String(id) + ");";
+            String suid;
+            for (int i = 0; i < 4; ++i)
+                suid = suid + String(uid[i], HEX);
+            String query = "INSERT INTO security.key_usage_history (key_id, lock_id) SELECT id, " + String(id) + " FROM security.key WHERE uid='" + String(suid) + "';";
             cur_mem->execute(query.c_str(), true);
             if (cur_mem->get_last_insert_id() > 0)
             {
-                Serial.print("Added message to history: key(");
-                Serial.print(key_id);
+                Serial.print("Added message to history: key_uid(");
+                Serial.print(suid);
                 Serial.print(") lock(");
                 Serial.print(id);
                 Serial.println(")");
@@ -207,7 +211,11 @@ void flushMessage()
             {
                 Serial.println("Something wrong while adding message to db");
             }
-            key_id = LockMem::popMessage();
+            uid[0] = 0;
+            uid[1] = 0;
+            uid[2] = 0;
+            uid[3] = 0;
+            LockMem::popMessage(uid);
         }
         delete cur_mem;
     }
@@ -335,6 +343,7 @@ void loop()
     {
         led_state = 1;
         led_timer = 250;
+        LockMem::pushMessage(rfid.uid.uidByte);
         Serial.println("Access granted");
     }
     else
